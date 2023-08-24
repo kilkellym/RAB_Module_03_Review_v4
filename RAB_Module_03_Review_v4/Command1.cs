@@ -75,40 +75,15 @@ namespace RAB_Module_03_Review_v4
 
                     string furnSet = GetParameterValueAsString(curRoom, "Furniture Set");
 
-                    // 8. loop through furniture set data - refactor to create GetFurnitureSet method
-                    foreach(FurnitureSet curSet in  furnitureSets)
-                    {
-                        if(curSet.Set == furnSet)
-                        {
-                            foreach(string furnItem in curSet.Furniture)
-                            {
-                                foreach(FurnitureType curType in furnitureTypes) // refactor to create GetFurnitureType method
-                                {
-                                    if(furnItem.Trim() == curType.Name)
-                                    {
-                                        FamilySymbol curFS = GetFamilySymbolByName(doc, curType.FamilyName, curType.TypeName);
-                                    
-                                        if(curFS != null)
-                                        {
-                                            if(curFS.IsActive == false)
-                                            {
-                                                curFS.Activate();
-                                            }
-                                        }
+                    FurnitureSet curSet = FurnitureSet.GetFurnitureSet(furnSet, furnitureSets);
 
-                                        FamilyInstance curFI = doc.Create.NewFamilyInstance(insPoint, curFS,
-                                            Autodesk.Revit.DB.Structure.StructuralType.NonStructural);
+                    List<FurnitureType> furnTypes = GetFurnitureTypesFromList(curSet, furnitureTypes);
 
-                                        counter++;
-                                    
-                                    }
-                                }
-                            }
+                    InsertFamilies(doc, insPoint, furnTypes);
 
-                            SetParameterValue(curRoom, "Furniture Count", curSet.GetFurnitureCount());
-                            
-                        }
-                    }
+                    SetParameterValue(curRoom, "Furniture Count", curSet.GetFurnitureCount());
+
+                    counter++;
                 }
 
                 t.Commit();
@@ -119,6 +94,53 @@ namespace RAB_Module_03_Review_v4
 
             return Result.Succeeded;
         }
+
+        private void InsertFamilies(Document doc, XYZ insPoint, List<FurnitureType> furnTypes)
+        {
+            foreach(FurnitureType curType in furnTypes)
+            {
+                FamilySymbol curFS = GetFamilySymbolByName(doc, curType.FamilyName, curType.TypeName);
+
+                if (curFS != null)
+                {
+                    if (curFS.IsActive == false)
+                    {
+                        curFS.Activate();
+                    }
+
+                    FamilyInstance curFI = doc.Create.NewFamilyInstance(insPoint, curFS,
+                    Autodesk.Revit.DB.Structure.StructuralType.NonStructural);
+                }
+            }
+        }
+
+        private List<FurnitureType> GetFurnitureTypesFromList(FurnitureSet curSet, List<FurnitureType> furnitureTypeList)
+        {
+            List<FurnitureType> returnList = new List<FurnitureType>();
+
+            foreach(string curType in curSet.Furniture)
+            {
+                string trimmedType = curType.Trim();
+                FurnitureType curFurnType = GetFurnitureTypeByName(trimmedType, furnitureTypeList);
+
+                returnList.Add(curFurnType);
+
+            }
+            return returnList;
+        }
+
+        private FurnitureType GetFurnitureTypeByName(string curType, List<FurnitureType> furnitureTypeList)
+        {
+            foreach(FurnitureType curFurnType in furnitureTypeList)
+            {
+                if(curType == curFurnType.Name)
+                    return curFurnType;
+            }
+
+            return null;
+        }
+
+        
 
         private void SetParameterValue(Element curElem, string paramName, int value)
         {

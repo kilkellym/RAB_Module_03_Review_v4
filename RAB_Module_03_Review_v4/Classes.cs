@@ -37,5 +37,15 @@ namespace RAB_Module_03_Review_v4
         {
             return Furniture.Length;
         }
+        public static FurnitureSet GetFurnitureSet(string setString, List<FurnitureSet> setList)
+        {
+            foreach (FurnitureSet curSet in setList)
+            {
+                if (curSet.Set == setString)
+                    return curSet;
+            }
+
+            return null;
+        }
     }
 }
